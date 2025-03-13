@@ -1,0 +1,292 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Rufus: Data Analysis Workflow\n",
+    "\n",
+    "This notebook demonstrates how to use Rufus to extract data from websites and perform data analysis on the results."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Setup\n",
+    "\n",
+    "First, let's import the necessary libraries and set up our environment."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "source": [
+    "import os\n",
+    "import pandas as pd\n",
+    "import matplotlib.pyplot as plt\n",
+    "import seaborn as sns\n",
+    "from datetime import datetime\n",
+    "\n",
+    "# Import Rufus\n",
+    "from rufus import RufusClient, setup_logger\n",
+    "\n",
+    "# Set up logging\n",
+    "setup_logger(level=\"INFO\")\n",
+    "\n",
+    "# Display versions\n",
+    "import rufus\n",
+    "print(f\"Rufus version: {rufus.__version__}\")\n",
+    "print(f\"Pandas version: {pd.__version__}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Initialize Rufus Client\n",
+    "\n",
+    "Now we'll initialize the Rufus client using our API key."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "source": [
+    "# Get API key from environment\n",
+    "api_key = os.getenv(\"RUFUS_API_KEY\")\n",
+    "if not api_key:\n",
+    "    raise ValueError(\"RUFUS_API_KEY environment variable not set.\")\n",
+    "\n",
+    "# Create Rufus client\n",
+    "client = RufusClient(api_key=api_key)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Extract Economic Data\n",
+    "\n",
+    "Let's extract some economic data from a government website to analyze."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "source": [
+    "# Define the website to scrape\n",
+    "website = \"https://www.bls.gov/data/\"\n",
+    "\n",
+    "# Define instructions\n",
+    "instructions = \"\"\"\n",
+    "Extract all available economic indicators and statistics from the U.S. Bureau of Labor Statistics, including:\n",
+    "1. Employment and unemployment figures\n",
+    "2. Inflation and consumer price indices (CPI)\n",
+    "3. Producer price indices (PPI)\n",
+    "4. Productivity data\n",
+    "5. Regional economic data\n",
+    "6. Latest published figures for each indicator\n",
+    "7. Links to detailed data tables or downloads\n",
+    "\n",
+    "Focus on the most recent data and statistics, particularly national-level indicators.\n",
+    "\"\"\"\n",
+    "\n",
+    "print(f\"Scraping {website} for economic data...\")\n",
+    "\n",
+    "# Extract data\n",
+    "economic_data = client.scrape(\n",
+    "    url=website,\n",
+    "    instructions=instructions,\n",
+    "    max_pages=10,\n",
+    "    dynamic=True  # Use dynamic crawler for JavaScript-rendered content\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Explore the Extracted Data\n",
+    "\n",
+    "Let's explore what data we've extracted and see the structure of the documents."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "source": [
+    "# Display summary of extracted documents\n",
+    "print(f\"Extracted {len(economic_data)} relevant documents\\n\")\n",
+    "\n",
+    "for i, doc in enumerate(economic_data):\n",
+    "    print(f\"Document {i+1}:\")\n",
+    "    print(f\"  URL: {doc.get('url', 'N/A')}\")\n",
+    "    print(f\"  Title: {doc.get('title', 'N/A')}\")\n",
+    "    print(f\"  Relevance: {doc.get('relevance_score', 0)}/10\")\n",
+    "    print(f\"  Key Points: {len(doc.get('key_points', []))}\")\n",
+    "    print(f\"  Sections: {len(doc.get('sections', []))}\")\n",
+    "    print()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Convert to Pandas DataFrame\n",
+    "\n",
+    "Now let's convert the data to a pandas DataFrame for easier analysis."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "source": [
+    "# Extract economic indicators from the documents\n",
+    "indicators = []\n",
+    "\n",
+    "for doc in economic_data:\n",
+    "    # Extract sections that contain economic data\n",
+    "    for section in doc.get('sections', []):\n",
+    "        # Look for sections that might contain indicator data\n",
+    "        title = section.get('title', '').lower()\n",
+    "        content = section.get('content', '')\n",
+    "        \n",
+    "        # Skip sections that don't appear to be about specific indicators\n",
+    "        if not any(keyword in title for keyword in ['index', 'rate', 'price', 'employment', 'inflation', 'data', 'statistics']):\n",
+    "            continue\n",
+    "            \n",
+    "        # Try to extract indicator information\n",
+    "        lines = content.strip().split('\\n')\n",
+    "        for line in lines:\n",
+    "            line = line.strip()\n",
+    "            if not line or len(line) < 10:\n",
+    "                continue\n",
+    "                \n",
+    "            # Look for patterns that indicate an economic figure\n",
+    "            if ('%' in line or '$' in line or 'rate' in line.lower() or 'index' in line.lower()):\n",
+    "                indicators.append({\n",
+    "                    'source': doc.get('url', ''),\n",
+    "                    'section': title,\n",
+    "                    'data': line\n",
+    "                })\n",
+    "\n",
+    "# Convert to DataFrame\n",
+    "df = pd.DataFrame(indicators)\n",
+    "\n",
+    "# Display the DataFrame\n",
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Clean and Analyze the Data\n",
+    "\n",
+    "Now let's clean and analyze the extracted indicators."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "source": [
+    "# Analyze number of indicators by section\n",
+    "section_counts = df['section'].value_counts()\n",
+    "\n",
+    "# Plot a bar chart\n",
+    "plt.figure(figsize=(12, 6))\n",
+    "sns.barplot(x=section_counts.index, y=section_counts.values)\n",
+    "plt.title('Number of Economic Indicators by Section')\n",
+    "plt.xlabel('Section')\n",
+    "plt.ylabel('Count')\n",
+    "plt.xticks(rotation=45, ha='right')\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Extract Inflation Data\n",
+    "\n",
+    "Let's extract specific inflation data from our results."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "source": [
+    "# Filter for inflation-related data\n",
+    "inflation_data = df[df['data'].str.contains('inflation|cpi|consumer price|prices', case=False)]\n",
+    "\n",
+    "# Display the inflation data\n",
+    "inflation_data"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Save the Results\n",
+    "\n",
+    "Finally, let's save our results in different formats."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "source": [
+    "# Save the raw extracted data\n",
+    "client.save(economic_data, \"economic_data.json\")\n",
+    "client.save(economic_data, \"economic_data.md\", format=\"markdown\")\n",
+    "\n",
+    "# Save the processed DataFrame\n",
+    "df.to_csv(\"economic_indicators.csv\", index=False)\n",
+    "\n",
+    "print(\"Data saved successfully!\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Conclusion\n",
+    "\n",
+    "In this notebook, we've demonstrated how to use Rufus to extract economic data from the Bureau of Labor Statistics website, convert it to a structured format, and perform some basic analysis.\n",
+    "\n",
+    "Rufus makes it easy to extract specific information from websites based on natural language instructions, enabling more efficient data collection for analysis."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.10"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

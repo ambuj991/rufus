@@ -1,7 +1,6 @@
-# Rufus: Intelligent Web Data Extraction for LLMs
+# rufus-ai-web-extraction: Intelligent Web Data Extraction for LLMs
 
-
-Rufus is an AI-driven web crawler and data extraction tool designed specifically for feeding structured data into Large Language Models (LLMs) and Retrieval Augmented Generation (RAG) systems. It uses AI to dynamically determine what content is relevant based on natural language instructions, eliminating the need for custom web scraping tools that break when site structures change.
+rufus-ai-web-extraction is an AI-driven web crawler and data extraction tool designed specifically for feeding structured data into Large Language Models (LLMs) and Retrieval Augmented Generation (RAG) systems. It uses AI to dynamically determine what content is relevant based on natural language instructions, eliminating the need for custom web scraping tools that break when site structures change.
 
 ## 🌟 Features
 
@@ -22,48 +21,38 @@ Rufus is an AI-driven web crawler and data extraction tool designed specifically
 - [Quick Start](#quick-start)
 - [Core Concepts](#core-concepts)
 - [Advanced Usage](#advanced-usage)
-  - [Dynamic Content](#dynamic-content)
-  - [Site Mapping](#site-mapping)
-  - [Intelligent Scraping](#intelligent-scraping)
-  - [Authentication](#authentication)
-  - [Batch Processing](#batch-processing)
-  - [Export Formats](#export-formats)
-  - [Configuration Options](#configuration-options)
-  - [Error Handling](#error-handling)
 - [Command Line Interface](#command-line-interface)
 - [Integrating with RAG Systems](#integrating-with-rag-systems)
-  - [LangChain Integration](#langchain-integration)
-  - [LlamaIndex Integration](#llamaindex-integration)
 - [Example Use Cases](#example-use-cases)
-  - [Building a Company FAQ Chatbot](#building-a-company-faq-chatbot)
-  - [Creating a Research Database](#creating-a-research-database)
-  - [University Program Information Extraction](#university-program-information-extraction)
-- [How Rufus Works](#how-rufus-works)
+- [How It Works](#how-it-works)
 - [Architecture](#architecture)
 
 ## 🔧 Installation
 
 ```bash
-# Basic installation
-pip install rufus
+# From PyPI
+pip install rufus-ai-web-extraction
+
+# From TestPyPI
+pip install -i https://test.pypi.org/simple/ rufus-ai-web-extraction==0.1.0
 
 # With support for dynamic content (JS-rendered pages)
-pip install rufus[dynamic]
+pip install rufus-ai-web-extraction[dynamic]
 
 # With RAG framework integrations
-pip install rufus[rag]
+pip install rufus-ai-web-extraction[rag]
 
 # Development installation with testing tools
-pip install rufus[dev]
+pip install rufus-ai-web-extraction[dev]
 
 # Full installation with all features
-pip install rufus[dynamic,rag,dev]
+pip install rufus-ai-web-extraction[dynamic,rag,dev]
 ```
 
 For dynamic content support, you'll also need to install browser dependencies:
 
 ```bash
-# After installing rufus[dynamic]
+# After installing rufus-ai-web-extraction[dynamic]
 python -m playwright install
 ```
 
@@ -96,7 +85,7 @@ rufus_cli.py --url https://example.com --instructions "Extract product informati
 
 ## 🧩 Core Concepts
 
-Rufus is built around several key concepts that make it powerful and flexible:
+rufus-ai-web-extraction is built around several key concepts that make it powerful and flexible:
 
 1. **Natural Language Instructions**: Instead of specifying CSS selectors or XPaths, you simply describe what information you need in plain English.
 
@@ -297,7 +286,6 @@ rufus_cli.py --interactive
 
 ```python
 from rufus import RufusClient
-# You would need to implement this integration
 from rufus.integrations.langchain import create_langchain_documents
 from langchain.vectorstores import Chroma
 from langchain.embeddings import OpenAIEmbeddings
@@ -321,7 +309,6 @@ results = vectorstore.similarity_search("How do I install the product?")
 
 ```python
 from rufus import RufusClient
-# You would need to implement this integration
 from rufus.integrations.llamaindex import create_llamaindex_documents
 from llama_index import VectorStoreIndex
 
@@ -405,12 +392,7 @@ for site, documents in batch_results.items():
 
 ### University Program Information Extraction
 
-See the [university_test.py](examples/university_test.py) example for a complete implementation of:
-
-- Extracting academic program information
-- Gathering research activities
-- Documenting campus facilities
-- Creating a comprehensive report
+Extract comprehensive university information:
 
 ```python
 from rufus import RufusClient
@@ -437,7 +419,7 @@ documents = client.intelligent_scrape(
 client.save(documents.get("processed_documents", []), "university_programs.json")
 ```
 
-## ⚙️ How Rufus Works
+## ⚙️ How It Works
 
 1. **Intelligent Crawling**: Rufus starts at the provided URL and analyzes the page content.
 2. **Content Analysis**: The LLM evaluates the content to determine what's relevant based on your instructions.
@@ -484,4 +466,10 @@ Rufus is built with a modular architecture:
              └─────────────┘   └────────────┘
 ```
 
+## 📝 License
 
+MIT License
+
+## 👥 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
